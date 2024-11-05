@@ -26,8 +26,11 @@ case "$ARCH" in
         exit 1
         ;;
 esac
-echo -e "${CYAN}RUN duplicater.sh${RESET}"
-bash ./duplicater.sh
+echo -e "${CYAN}Duplicate test.c * 1000${RESET}"
+for i in {1..1000}
+do
+	cp __tests__/test.c __tests__/test${i}.c
+done
 if [ ! -f "$EXE" ]; then
     echo -e "${RED}Executable not found: $EXE${RESET}\n"
     exit 1

@@ -1,0 +1,53 @@
+name: release
+
+on:
+  release:
+    types: [created]     
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.13.0
+
+      - name: Build the binaries
+        run: |
+          zig build
+
+      - name: List artifact directories
+        run: |
+          echo "Listing files in each artifact directory:"
+          for dir in zig-out/*; do
+            if [ -d "$dir" ]; then
+              echo "Contents of $dir:"
+              ls -la "$dir"
+            fi
+          done
+
+      - name: Create tar.gz archives dynamically
+        run: |
+          for dir in zig-out/*; do
+            if [ -d "$dir" ]; then
+              base_name=$(basename "$dir")
+              tar -czf "zig-out/${base_name}.tar.gz" -C "$dir" . -C ../.. LICENSE README.md
+              echo "Created archive: zig-out/${base_name}.tar.gz"
+            fi
+          done
+
+      - name: Create release and upload binaries
+        uses: ncipollo/release-action@v1.14.0
+        with:
+          tag: ${{ github.event.release.tag }}
+          allowUpdates: true
+          artifacts: zig-out/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,15 +1,17 @@
-name: release
+name: Create release
 
 on:
-  release:
-    types: [created]     
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  release:
+    name: Release pushed tag
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -22,16 +24,6 @@ jobs:
       - name: Build the binaries
         run: |
           zig build
-
-      - name: List artifact directories
-        run: |
-          echo "Listing files in each artifact directory:"
-          for dir in zig-out/*; do
-            if [ -d "$dir" ]; then
-              echo "Contents of $dir:"
-              ls -la "$dir"
-            fi
-          done
 
       - name: Create tar.gz archives dynamically
         run: |
@@ -56,12 +48,14 @@ jobs:
           fi
           echo "Changelog saved to changelog.txt"
 
-      - name: Create release and upload binaries
-        uses: ncipollo/release-action@v1.14.0
-        with:
-          tag: ${{ github.event.release.tag }}
-          allowUpdates: true
-          artifacts: zig-out/*.tar.gz
-          bodyFile: changelog.txt
+      - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release create "$tag" \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
+              --generate-notes \
+              --notes-file="changelog.txt" \
+              zig-out/*.tar.gz

@@ -45,9 +45,14 @@ jobs:
 
       - name: Generate Changelog
         run: |
-          previous_tag=$(git describe --tags --abbrev=0 HEAD^)
-          echo "Previous tag: $previous_tag"
-          git log ${previous_tag}..HEAD --pretty=format:"(%h) %s - %an" > changelog.txt
+          if git describe --tags --abbrev=0 HEAD^ >/dev/null 2>&1; then
+            previous_tag=$(git describe --tags --abbrev=0 HEAD^)
+            echo "Previous tag found: $previous_tag"
+            git log ${previous_tag}..HEAD --pretty=format:"(%h) %s - %an" > changelog.txt
+          else
+            echo "No previous tag found, generating changelog from initial commit"
+            git log --pretty=format:"(%h) %s - %an" > changelog.txt
+          fi
           echo "Changelog saved to changelog.txt"
 
       - name: Create release and upload binaries

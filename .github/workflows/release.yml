@@ -35,19 +35,6 @@ jobs:
             fi
           done
 
-      - name: Generate Changelog
-        run: |
-          previous_tag=$(git tag --sort=-creatordate | head -n 1)
-          
-          if [ -z "$previous_tag" ]; then
-            echo "No previous tag found, generating changelog from initial commit"
-            git log --pretty=format:"(%h) %s - %an" > changelog.txt
-          else
-            echo "Previous tag found: $previous_tag"
-            git log ${previous_tag}..HEAD --pretty=format:"(%h) %s - %an" > changelog.txt
-          fi
-          echo "Changelog saved to changelog.txt"
-
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -57,5 +44,4 @@ jobs:
               --repo="$GITHUB_REPOSITORY" \
               --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
               --generate-notes \
-              --notes-file="changelog.txt" \
               zig-out/*.tar.gz

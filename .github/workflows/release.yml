@@ -43,11 +43,19 @@ jobs:
             fi
           done
 
+      - name: Generate Changelog
+        run: |
+          previous_tag=$(git describe --tags --abbrev=0 HEAD^)
+          echo "Previous tag: $previous_tag"
+          git log ${previous_tag}..HEAD --pretty=format:"(%h) %s - %an" > changelog.txt
+          echo "Changelog saved to changelog.txt"
+
       - name: Create release and upload binaries
         uses: ncipollo/release-action@v1.14.0
         with:
           tag: ${{ github.event.release.tag }}
           allowUpdates: true
           artifacts: zig-out/*.tar.gz
+          bodyFile: changelog.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
